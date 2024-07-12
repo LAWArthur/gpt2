@@ -29,7 +29,7 @@ if torch.cuda.is_available():
 print(device)
 # device = 'cpu'
 
-loader = DataLoader(B = 16, T = 1024)
+loader = DataLoader(B = 12, T = 1024)
 torch.set_float32_matmul_precision('high')
 
 torch.manual_seed(2024)
