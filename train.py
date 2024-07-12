@@ -48,7 +48,11 @@ for step in range(max_steps):
     x, y = loader.next_batch()
     x,y = x.to(device), y.to(device)
     optimizer.zero_grad()
-    logits, loss = model(x,y)
+    if torch.cuda.is_available:
+        with torch.autocast(device_type=device, dtype=torch.bfloat16):
+            logits, loss = model(x,y)
+    else:
+        logits, loss = model(x,y)
     loss.backward()
     norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
     optimizer.step()
