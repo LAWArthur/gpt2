@@ -3,6 +3,7 @@ from torch.nn import functional as F
 from model import GPT, GPTConfig
 from dataloader import DataLoader
 import math
+import time
 
 max_lr = 6e-4
 min_lr = max_lr * 0.1
@@ -22,13 +23,13 @@ def get_lr(it):
 
 device = torch.device('cpu')
 if torch.cuda.is_available():
-    device = torch.cuda.device(0)
+    device = torch.device('cuda')
 # elif torch_directml.is_available():
 #     device = torch_directml.device(0)
 print(device)
 # device = 'cpu'
 
-loader = DataLoader(B = 4, T = 256)
+loader = DataLoader(B = 16, T = 1024)
 torch.set_float32_matmul_precision('high')
 
 torch.manual_seed(2024)
@@ -43,6 +44,7 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, betas=(0.9, 0.95), ep
 
 
 for step in range(max_steps):
+    t0 = time.time()
     x, y = loader.next_batch()
     x,y = x.to(device), y.to(device)
     optimizer.zero_grad()
@@ -50,7 +52,11 @@ for step in range(max_steps):
     loss.backward()
     norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
     optimizer.step()
+    if torch.cuda.is_available(): torch.cuda.synchronize()
+    t1 = time.time()
+    dt = (t1 - t0) * 1000
+    tok_per_sec = (loader.B * loader.T) / (t1 - t0)
     lr = get_lr(step)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
-    print(f'step{step} | loss: {loss.item():.6f} | norm: {norm.item():.4f} | lr: {lr:.4e}')
+    print(f'step{step} | loss: {loss.item():.6f} | norm: {norm.item():.4f} | lr: {lr:.4e} | dt: {dt: .1f} | tok/sec: {tok_per_sec:.1f}')
