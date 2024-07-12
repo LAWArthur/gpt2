@@ -21,9 +21,9 @@ def get_lr(it):
     coeff = 0.5 *(1.0 + math.cos(math.pi * decay_ratio))
     return min_lr + coeff * (max_lr - min_lr)
 
-device = torch.device('cpu')
+device = 'cpu'
 if torch.cuda.is_available():
-    device = torch.device('cuda')
+    device = 'cuda'
 # elif torch_directml.is_available():
 #     device = torch_directml.device(0)
 print(device)
@@ -36,7 +36,7 @@ torch.manual_seed(2024)
 
 model = GPT(GPTConfig())
 model.to(device)
-model = torch.compile(model, backend='eager')
+if torch.cuda.is_available(): model = torch.compile(model)
 # print("model compiled!")
 
 
@@ -48,10 +48,7 @@ for step in range(max_steps):
     x, y = loader.next_batch()
     x,y = x.to(device), y.to(device)
     optimizer.zero_grad()
-    if torch.cuda.is_available:
-        with torch.autocast(device_type=device, dtype=torch.bfloat16):
-            logits, loss = model(x,y)
-    else:
+    with torch.autocast(device_type=device, dtype=torch.float16):
         logits, loss = model(x,y)
     loss.backward()
     norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
