@@ -8,7 +8,8 @@ import time
 max_lr = 6e-4
 min_lr = max_lr * 0.1
 warmup_steps = 10
-max_steps = 50
+max_steps = 500
+save_steps = 20
 
 def get_lr(it):
     if it < warmup_steps:
@@ -42,9 +43,9 @@ torch.set_float32_matmul_precision('high')
 torch.manual_seed(2024)
 
 model = GPT(GPTConfig())
-model.to(device)
-if torch.cuda.is_available(): model = torch.compile(model)
-else: model = torch.compile(model, backend='eager')
+model = model.to(device)
+if torch.cuda.is_available(): model.compile()
+else: model.compile(backend='eager')
 # print("model compiled!")
 
 
@@ -73,3 +74,5 @@ for step in range(max_steps):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     print(f'step{step} | loss: {loss_accum.item():.6f} | norm: {norm.item():.4f} | lr: {lr:.4e} | dt: {dt: .1f} | tok/sec: {tok_per_sec:.1f}')
+    if step % save_steps == 0:
+        torch.save(model.state_dict(), f'./checkpoints/checkpoint_{step}.ckpt')
