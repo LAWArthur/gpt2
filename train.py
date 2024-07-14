@@ -29,7 +29,14 @@ if torch.cuda.is_available():
 print(device)
 # device = 'cpu'
 
-loader = DataLoader(B = 12, T = 1024)
+
+total_batch_size = 524288
+B = 16
+T = 1024
+assert total_batch_size % (B*T) == 0
+grad_accum_steps = total_batch_size // (B*T)
+
+loader = DataLoader(B = B, T = T)
 torch.set_float32_matmul_precision('high')
 
 torch.manual_seed(2024)
@@ -37,27 +44,32 @@ torch.manual_seed(2024)
 model = GPT(GPTConfig())
 model.to(device)
 if torch.cuda.is_available(): model = torch.compile(model)
+else: model = torch.compile(model, backend='eager')
 # print("model compiled!")
 
 
-optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, betas=(0.9, 0.95), eps=1e-8)
-
+# optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, betas=(0.9, 0.95), eps=1e-8)
+optimizer = model.configure_optimizers(0.1, 6e-4, device=device)
 
 for step in range(max_steps):
     t0 = time.time()
-    x, y = loader.next_batch()
-    x,y = x.to(device), y.to(device)
     optimizer.zero_grad()
-    with torch.autocast(device_type=device, dtype=torch.float16):
-        logits, loss = model(x,y)
-    loss.backward()
+    loss_accum = 0.0
+    for i in range(grad_accum_steps):
+        x, y = loader.next_batch()
+        x,y = x.to(device), y.to(device)
+        with torch.autocast(device_type=device, dtype=torch.float16):
+            logits, loss = model(x,y)
+        loss = loss / grad_accum_steps
+        loss_accum += loss.detach()
+        loss.backward()
     norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
     optimizer.step()
     if torch.cuda.is_available(): torch.cuda.synchronize()
     t1 = time.time()
     dt = (t1 - t0) * 1000
-    tok_per_sec = (loader.B * loader.T) / (t1 - t0)
+    tok_per_sec = (loader.B * loader.T * grad_accum_steps) / (t1 - t0)
     lr = get_lr(step)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
-    print(f'step{step} | loss: {loss.item():.6f} | norm: {norm.item():.4f} | lr: {lr:.4e} | dt: {dt: .1f} | tok/sec: {tok_per_sec:.1f}')
+    print(f'step{step} | loss: {loss_accum.item():.6f} | norm: {norm.item():.4f} | lr: {lr:.4e} | dt: {dt: .1f} | tok/sec: {tok_per_sec:.1f}')
