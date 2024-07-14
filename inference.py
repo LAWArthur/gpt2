@@ -1,11 +1,11 @@
 import torch
 from torch.nn import functional as F
-from model import GPT
+from model import GPT, GPTConfig
 
 # ----- TEST ------
 num_return_sequences = 5
 max_length = 30
-prompt = "Genshin Impact is a very good game."
+prompt = "I know the moon, and this is an alien city."
 
 device = torch.device('cpu')
 if torch.cuda.is_available():
@@ -15,8 +15,10 @@ if torch.cuda.is_available():
 print(device)
 #device = torch.device('cpu')
 
-model = GPT.from_pretrained('gpt2')
-#model = GPT(GPTConfig())
+# model = GPT.from_pretrained('gpt2')
+model = GPT(GPTConfig())
+model.load_state_dict(state_dict=torch.load('checkpoints/checkpoint_500.ckpt'))
+
 model.eval()
 model.to(device)
 print('model loaded and moved to gpu.')
