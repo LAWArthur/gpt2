@@ -87,7 +87,7 @@ for step in range(max_steps):
                 logits = model(x)[0]
                 logits = logits[:, -1, :]
 
-                probs = F.softmax(logits, dim=-1).cpu()
+                probs = F.softmax(logits, dim=-1)
                 topk_probs, topk_indices = torch.topk(probs, 50, dim=-1)
                 ix = torch.multinomial(topk_probs, 1, generator=sample_rng)
                 xcol = torch.gather(topk_indices, -1, ix)
