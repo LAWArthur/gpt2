@@ -23,7 +23,7 @@ if __name__ == '__main__':
     dataset = load_dataset("HuggingFaceFW/fineweb-edu", name='sample-10BT', num_proc=num_proc_load_dataset)
 
     # owt by default only contains the 'train' split, so create a test split
-    split_dataset = dataset.train_test_split(test_size=0.0005, seed=2357, shuffle=True)
+    split_dataset = dataset['train'].train_test_split(test_size=0.0005, seed=2357, shuffle=True)
     split_dataset['val'] = split_dataset.pop('test') # rename the test split to val
 
     # this results in:
