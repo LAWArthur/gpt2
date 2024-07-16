@@ -2,7 +2,7 @@ import tiktoken
 import torch
 import numpy as np
 class DataLoader:
-    def __init__(self, B, T):
+    def __init__(self, B, T, split):
         self.B = B
         self.T = T
         # with open('tinyshakespeare/input.txt', 'r') as f:
@@ -13,7 +13,7 @@ class DataLoader:
         # print(f'loaded {len(self.tokens)} tokens.')
         # print(f'1 epoch = {len(self.tokens) //  (B*T) } batches.')
 
-        self.tokens = np.memmap('train.bin', dtype=np.uint16, mode='r')
+        self.tokens = np.memmap(f'{split}.bin', dtype=np.uint16, mode='r')
         print(f'loaded {len(self.tokens)} tokens.')
         print(f'1 epoch = {len(self.tokens) //  (B*T) } batches.')
 
@@ -31,3 +31,6 @@ class DataLoader:
         if self.current_position + B*T+1 > len(self.tokens):
             self.current_position = 0
         return x,y
+    
+    def reset(self):
+        self.current_position = 0
