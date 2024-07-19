@@ -133,10 +133,10 @@ class GPT(nn.Module):
         print('loading weights from pretrained gpt: %s' % model_type)
 
         config_args = {
-            'gpt2': dict(n_layer = 12, n_head = 12, n_embd = 768),
-            'gpt2-medium': dict(n_layer = 24, n_head = 16, n_embd = 1024),
-            'gpt2-large': dict(n_layer = 36, n_head = 20, n_embd = 1280),
-            'gpt2-xl': dict(n_layer = 48, n_head = 25, n_embd = 1600)
+            'gpt2': dict(vocab_size = 50257, n_layer = 12, n_head = 12, n_embd = 768),
+            'gpt2-medium': dict(vocab_size = 50257, n_layer = 24, n_head = 16, n_embd = 1024),
+            'gpt2-large': dict(vocab_size = 50257, n_layer = 36, n_head = 20, n_embd = 1280),
+            'gpt2-xl': dict(vocab_size = 50257, n_layer = 48, n_head = 25, n_embd = 1600)
         }[model_type]
 
         config = GPTConfig(**config_args)
@@ -164,7 +164,7 @@ class GPT(nn.Module):
 
         return model
     
-    def configure_optimizers(self, weight_decay, learning_rate, device):
+    def configure_optimizers(self, weight_decay, learning_rate, betas, device):
         param_dict = {pn: p for pn, p in self.named_parameters() if p.requires_grad}
         decay_params = [p for _, p in param_dict.items() if p.dim() >= 2]
         nodecay_params = [p for _, p in param_dict.items() if p.dim() < 2]
@@ -180,5 +180,5 @@ class GPT(nn.Module):
         fused_available = 'fused' in inspect.signature(torch.optim.AdamW).parameters
         use_fused = fused_available and 'cuda' in device
         print(f'using fused AdamW: {use_fused}')
-        optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=(0.9, 0.95), eps=1e-8, fused=use_fused)
+        optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=betas, eps=1e-8, fused=use_fused)
         return optimizer

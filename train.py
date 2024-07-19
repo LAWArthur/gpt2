@@ -55,7 +55,7 @@ else: model.compile(backend='eager')
 enc = tiktoken.get_encoding('gpt2')
 
 # optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, betas=(0.9, 0.95), eps=1e-8)
-optimizer = model.configure_optimizers(0.1, 6e-4, device=device)
+optimizer = model.configure_optimizers(0.1, 6e-4, (0.9, 0.95), device=device)
 
 for step in range(max_steps):
     if step % val_step == 0: # validation

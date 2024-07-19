@@ -15,9 +15,9 @@ if torch.cuda.is_available():
 print(device)
 #device = torch.device('cpu')
 
-# model = GPT.from_pretrained('gpt2')
-model = GPT(GPTConfig())
-model.load_state_dict(state_dict=torch.load('checkpoints/checkpoint_500.ckpt'))
+model = GPT.from_pretrained('gpt2')
+# model = GPT(GPTConfig())
+# model.load_state_dict(state_dict=torch.load('checkpoints/checkpoint_500.ckpt'))
 
 model.eval()
 model.to(device)

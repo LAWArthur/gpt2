@@ -10,9 +10,9 @@ max_lr = 6e-4
 min_lr = max_lr * 0.1
 warmup_steps = 100
 max_steps = 19073
-total_batch_size = 1024
-B = 4
-T = 256
+total_batch_size = 16
+B = 1
+T = 16
 assert total_batch_size % (B*T) == 0
 grad_accum_steps = total_batch_size // (B*T)
 
@@ -45,8 +45,8 @@ if torch.cuda.is_available():
 
 model = GPT(GPTConfig())
 model = model.to(device)
-# if torch.cuda.is_available(): model.compile()
-# else: model.compile(backend='eager')
+if torch.cuda.is_available(): model.compile()
+else: model.compile(backend='eager')
 # print("model compiled!")
 
 enc = tiktoken.get_encoding('gpt2')
@@ -65,8 +65,8 @@ for step in range(max_steps):
         x, y = train_loader.next_batch()
         x,y = x.to(device), y.to(device)
         # print('begin forward!')
-        # with torch.autocast(device_type=device, dtype=torch.float16):
-        logits, loss = model(x,y)
+        with torch.autocast(device_type=device, dtype=torch.float16):
+            logits, loss = model(x,y)
         # print('ended forward!')
         loss = loss / grad_accum_steps
         loss_accum += loss.detach()
@@ -79,6 +79,7 @@ for step in range(max_steps):
     tok_per_sec = (train_loader.B * train_loader.T * grad_accum_steps) / (t1 - t0)
     lr = get_lr(step)
     for param_group in optimizer.param_groups:
+        print(param_group['lr'])
         param_group['lr'] = lr
     print(f'step{step} | loss: {loss_accum.item():.6f} | norm: {norm.item():.4f} | lr: {lr:.4e} | dt: {dt: .1f} | tok/sec: {tok_per_sec:.1f}')
 
