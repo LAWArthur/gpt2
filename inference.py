@@ -3,9 +3,18 @@ from torch.nn import functional as F
 from model import GPT, GPTConfig
 
 # ----- TEST ------
-num_return_sequences = 5
-max_length = 30
-prompt = "I know the moon, and this is an alien city."
+num_return_sequences = 3
+max_length = 1024
+prompt = ''
+
+while True:
+    try:
+        l = input()
+        prompt += '\n'
+        prompt += l
+    except:
+        break
+
 
 device = torch.device('cpu')
 if torch.cuda.is_available():
@@ -47,14 +56,14 @@ while x.size(1) < max_length:
         logits = model(x)[0]
         logits = logits[:, -1, :]
 
-        probs = F.softmax(logits, dim=-1).cpu()
+        probs = F.softmax(logits, dim=-1)
         topk_probs, topk_indices = torch.topk(probs, 50, dim=-1)
         ix = torch.multinomial(topk_probs, 1)
         xcol = torch.gather(topk_indices, -1, ix)
-        x = torch.cat((x, xcol.to(device)), dim=1)
+        x = torch.cat((x, xcol), dim=1)
 
 x.to('cpu')
 for i in range(num_return_sequences):
     tokens = x[i,:max_length].tolist()
     decoded = enc.decode(tokens)
-    print('>', decoded)
+    print('>', decoded, '\n')
