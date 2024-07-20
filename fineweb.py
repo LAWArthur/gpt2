@@ -54,7 +54,8 @@ if __name__ == '__main__':
     tokenized = split_dataset.map(
         process,
         desc="tokenizing the splits",
-        num_proc=num_proc,
+        remove_columns=['text']
+        num_proc=num_proc
     )
 
     # concatenate all the ids in each dataset into one large file we can use for training
