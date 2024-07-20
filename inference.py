@@ -15,9 +15,17 @@ if torch.cuda.is_available():
 print(device)
 #device = torch.device('cpu')
 
-model = GPT.from_pretrained('gpt2')
-# model = GPT(GPTConfig())
-# model.load_state_dict(state_dict=torch.load('checkpoints/checkpoint_500.ckpt'))
+#model = GPT.from_pretrained('gpt2')
+model = GPT(GPTConfig())
+checkpoint = torch.load('out/ckpt.pt')
+state_dict = checkpoint['model']
+    # fix the keys of the state dictionary :(
+    # honestly no idea how checkpoints sometimes get this prefix, have to debug more
+unwanted_prefix = '_orig_mod.'
+for k,v in list(state_dict.items()):
+    if k.startswith(unwanted_prefix):
+        state_dict[k[len(unwanted_prefix):]] = state_dict.pop(k)
+model.load_state_dict(state_dict=state_dict)
 
 model.eval()
 model.to(device)
