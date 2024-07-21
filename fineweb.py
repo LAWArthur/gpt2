@@ -44,7 +44,12 @@ if __name__ == '__main__':
 
     # we now want to tokenize the dataset. first define the encoding function (gpt2 bpe)
     def process(example):
-        ids = enc.encode_ordinary(example['text']) # encode_ordinary ignores any special tokens
+        ids = []
+        import textwrap
+        segment_length = 1024
+        segments = textwrap.wrap(example['text'], segment_length, break_long_words=False, replace_whitespace=False)
+        for s in segments:
+            ids += enc.encode_ordinary(s)
         ids.append(enc.eot_token) # add the end of text token, e.g. 50256 for gpt2 bpe
         # note: I think eot should be prepended not appended... hmm. it's called "eot" though...
         out = {'ids': ids, 'len': len(ids)}
@@ -54,7 +59,7 @@ if __name__ == '__main__':
     tokenized = split_dataset.map(
         process,
         desc="tokenizing the splits",
-        remove_columns=['text']
+        remove_columns=['text'],
         num_proc=num_proc
     )
 
